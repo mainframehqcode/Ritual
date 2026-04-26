@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ritual-The habit tracker</title>
+    <title>Ritual — The habit tracker</title>
+    <link rel="icon" type="image/svg+xml" href="ritual.png">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/shapes/svg?seed=Ritual&backgroundColor=0f172a">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -16,14 +18,16 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['"Inter"', 'sans-serif'],
-                        serif: ['"Instrument Serif"', 'serif'],
+                        serif: ['"Playfair Display"', 'serif'],
                     },
                     boxShadow: {
                         'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.05)',
+                        'premium-dark': '0 20px 50px -12px rgba(0, 0, 0, 0.3)',
                         'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)',
                     }
                 }
@@ -38,41 +42,48 @@
         }
     </style>
 </head>
-<body class="bg-[#F6F8FA] text-[#1A1C1E] font-sans selection:bg-indigo-100" x-data="habitApp()" x-init="init()" x-cloak>
-
-    <!-- Navigation Overlay -->
-    <div class="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F6F8FA] to-transparent pointer-events-none z-40"></div>
-    
-    <!-- Floating Bottom Menu -->
-    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-2xl border border-white/50 shadow-premium rounded-[40px] px-4 py-3 flex items-center justify-around w-[90%] max-w-sm z-50">
-        <button @click="activeTab = 'today'" :class="activeTab === 'today' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
+<body class="font-sans selection:bg-indigo-100 antialiased" :class="{ 'dark': darkMode }" x-data="habitApp()" x-init="init()" x-cloak>
+    <div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-500">
+        
+        <!-- Navigation Overlay -->
+        <div class="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent pointer-events-none z-40"></div>
+        
+        <!-- Floating Bottom Menu -->
+        <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border border-slate-200 dark:border-white/10 shadow-premium dark:shadow-premium-dark rounded-[40px] px-2 py-2 flex items-center justify-around w-[90%] max-w-[420px] z-50 transition-all duration-300">
+        <button @click="activeTab = 'today'" :class="activeTab === 'today' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
             <i data-lucide="layout-grid" class="group-hover:scale-110 transition-transform" :size="20" :stroke-width="activeTab === 'today' ? 2.5 : 2"></i>
             <span x-show="activeTab === 'today'" class="text-xs font-bold tracking-tight" x-transition>Daily</span>
         </button>
-        <button @click="activeTab = 'all'" :class="activeTab === 'all' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
+        
+        <!-- Center Add Button -->
+        <button @click="isAddModalOpen = true" class="w-12 h-12 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-95 mx-2">
+            <i data-lucide="plus" size="24" stroke-width="2"></i>
+        </button>
+
+        <button @click="activeTab = 'all'" :class="activeTab === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
             <i data-lucide="list" class="group-hover:scale-110 transition-transform" :size="20" :stroke-width="activeTab === 'all' ? 2.5 : 2"></i>
             <span x-show="activeTab === 'all'" class="text-xs font-bold tracking-tight" x-transition>Habits</span>
         </button>
-        <button @click="activeTab = 'stats'" :class="activeTab === 'stats' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
+        <button @click="activeTab = 'stats'" :class="activeTab === 'stats' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
             <i data-lucide="bar-chart-2" class="group-hover:scale-110 transition-transform" :size="20" :stroke-width="activeTab === 'stats' ? 2.5 : 2"></i>
             <span x-show="activeTab === 'stats'" class="text-xs font-bold tracking-tight" x-transition>Growth</span>
         </button>
     </nav>
 
     <!-- Header Section -->
-    <header class="max-w-xl mx-auto px-6 pt-20 pb-12">
-        <div class="flex justify-between items-start">
-            <div class="space-y-1">
-                <h1 class="text-7xl font-[400] font-serif tracking-tight text-slate-900 leading-none italic select-none">Ritual</h1>
-                <p class="text-slate-400 font-medium text-[9px] uppercase tracking-[0.4em] pl-1.5" x-text="todayFriendly"></p>
+    <header class="max-w-xl mx-auto px-6 pt-20 pb-16">
+        <div class="flex justify-between items-center">
+            <div class="flex flex-col">
+                <h1 class="text-7xl font-serif tracking-tight text-slate-950 dark:text-white leading-none select-none drop-shadow-sm">Ritual</h1>
+                <p class="text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-[0.55em] mt-5 pl-1" x-text="todayFriendly"></p>
             </div>
-            <button @click="isAddModalOpen = true" class="w-16 h-16 bg-slate-900 text-white rounded-[32px] flex items-center justify-center shadow-premium hover:bg-black active:scale-95 transition-all">
-                <i data-lucide="plus" stroke-width="1.5" size="24"></i>
-            </button>
+            <div class="flex items-center gap-4">
+                <button @click="toggleTheme()" class="w-14 h-14 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-full flex items-center justify-center shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+                    <i :data-lucide="darkMode ? 'sun' : 'moon'" size="22" stroke-width="1.2"></i>
+                </button>
+            </div>
         </div>
     </header>
-
-    <!-- Main Dynamic Content -->
     <main class="max-w-xl mx-auto px-6 pb-48">
         
         <!-- Tab: Today's Focus -->
@@ -80,22 +91,22 @@
             <div class="space-y-8">
                 <!-- Daily Progress Overview -->
                 <template x-if="habits.length > 0">
-                    <div class="bg-white rounded-[48px] p-10 shadow-premium border border-slate-50 relative overflow-hidden">
+                    <div class="bg-white dark:bg-slate-900 rounded-[48px] p-10 shadow-premium dark:shadow-premium-dark border border-slate-100 dark:border-white/5 relative overflow-hidden">
                         <div class="relative z-10">
                             <div class="flex justify-between items-end mb-6">
                                 <div>
-                                    <p class="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em] mb-2">Daily Progress</p>
-                                    <h4 class="text-3xl font-serif italic text-slate-900 leading-none">
+                                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.3em] mb-2">Daily Progress</p>
+                                    <h4 class="text-4xl font-serif text-slate-950 dark:text-white leading-none">
                                         <span x-text="todayDoneCount"></span>
-                                        <span class="text-sm font-sans not-italic text-slate-200 uppercase tracking-widest font-black ml-1">/ <span x-text="habits.length"></span></span>
+                                        <span class="text-sm font-sans text-slate-300 dark:text-slate-700 uppercase tracking-widest font-black ml-2">/ <span x-text="habits.length"></span></span>
                                     </h4>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-4xl font-serif italic text-slate-900 opacity-20" x-text="todayProgressPercentage + '%'"></p>
+                                    <p class="text-4xl font-serif text-slate-950 dark:text-white opacity-20" x-text="todayProgressPercentage + '%'"></p>
                                 </div>
                             </div>
-                            <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                                <div class="h-full bg-slate-900 rounded-full transition-all duration-1000 ease-out" :style="'width: ' + todayProgressPercentage + '%'"></div>
+                            <div class="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full bg-slate-950 dark:bg-white rounded-full transition-all duration-1000 ease-out" :style="'width: ' + todayProgressPercentage + '%'"></div>
                             </div>
                         </div>
                     </div>
@@ -103,31 +114,32 @@
 
                 <!-- Empty State -->
                 <template x-if="habits.length === 0">
-                    <div class="bg-white rounded-[56px] p-20 text-center border border-slate-100 shadow-premium">
-                        <div class="bg-slate-50 w-24 h-24 rounded-[40px] flex items-center justify-center mx-auto mb-10 text-slate-300">
+                    <div class="bg-white dark:bg-slate-900 rounded-[56px] p-20 text-center border border-slate-100 dark:border-white/5 shadow-premium dark:shadow-premium-dark transition-all duration-500">
+                        <div class="bg-slate-50 dark:bg-white/5 w-24 h-24 rounded-[40px] flex items-center justify-center mx-auto mb-10 text-slate-400 dark:text-slate-600">
                             <i data-lucide="feather" size="40" stroke-width="1"></i>
                         </div>
-                        <h3 class="text-4xl font-serif italic mb-4 tracking-tight">Genesis</h3>
-                        <p class="text-slate-400 font-medium mb-12 text-lg leading-relaxed px-6">Every great change begins with a single intentional act.</p>
-                        <button @click="isAddModalOpen = true" class="bg-slate-900 text-white px-12 py-6 rounded-[32px] font-bold shadow-xl">Define Ritual</button>
+                        <h3 class="text-4xl font-serif mb-6 tracking-tight text-slate-950 dark:text-white">Genesis</h3>
+                        <p class="text-slate-500 dark:text-slate-400 font-medium mb-12 text-lg leading-relaxed px-6">Every great change begins with a single intentional act.</p>
+                        <button @click="isAddModalOpen = true" class="bg-slate-950 dark:bg-white text-white dark:text-slate-950 px-12 py-6 rounded-full font-bold shadow-xl hover:scale-105 active:scale-95 transition-all">Define Ritual</button>
                     </div>
                 </template>
                 
+                
                 <!-- Habit Cards -->
                 <template x-for="h in habits" :key="h.id">
-                    <div class="bg-white rounded-[48px] p-8 shadow-premium border border-slate-50 transition-all duration-300">
+                    <div class="bg-white dark:bg-slate-900 rounded-[48px] p-8 shadow-premium dark:shadow-premium-dark border border-slate-100 dark:border-white/5 transition-all duration-300">
                         <div class="flex items-center justify-between mb-10">
                             <div class="flex items-center gap-7">
                                 <div :class="h.color" class="w-16 h-16 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-inherit/10 relative">
                                     <i :data-lucide="h.icon" size="24" stroke-width="2"></i>
-                                    <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-white rounded-full flex items-center justify-center border border-slate-50 shadow-sm" x-show="isDoneToday(h)">
+                                    <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-sm" x-show="isDoneToday(h)">
                                          <i data-lucide="check" size="12" stroke-width="3" class="text-emerald-500"></i>
                                     </div>
                                 </div>
                                 <div class="space-y-1">
-                                    <h3 class="font-bold text-2xl tracking-tight text-slate-800" :class="isDoneToday(h) && 'text-slate-200'" x-text="h.name"></h3>
+                                    <h3 class="font-bold text-2xl tracking-tight text-slate-800 dark:text-slate-100 transition-colors" :class="isDoneToday(h) && 'text-slate-200 dark:text-slate-800'" x-text="h.name"></h3>
                                     <div class="flex items-center gap-2">
-                                        <p class="text-slate-400 text-[9px] font-bold uppercase tracking-[0.25em] flex items-center gap-2 leading-none">
+                                        <p class="text-slate-400 dark:text-slate-500 text-[9px] font-bold uppercase tracking-[0.25em] flex items-center gap-2 leading-none">
                                             <span class="w-1 h-1 rounded-full bg-orange-400"></span>
                                             <span x-text="getStreak(h)"></span> Day streak
                                         </p>
@@ -136,29 +148,29 @@
                             </div>
                             <!-- Completion Toggle -->
                             <button @click="toggleToday(h.id)" 
-                                    :class="isDoneToday(h) ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-slate-50 text-slate-100 border-slate-100'"
-                                    class="w-16 h-16 rounded-[32px] flex items-center justify-center transition-colors duration-300 shadow-sm border">
+                                    :class="isDoneToday(h) ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-slate-50 dark:bg-white/5 text-slate-100 dark:text-slate-800 border-slate-100 dark:border-white/5'"
+                                    class="w-16 h-16 rounded-[32px] flex items-center justify-center transition-all duration-300 shadow-sm border">
                                 <template x-if="isDoneToday(h)">
                                     <i data-lucide="check" stroke-width="2.5" size="28"></i>
                                 </template>
                                 <template x-if="!isDoneToday(h)">
-                                    <div class="w-6 h-6 bg-white rounded-xl shadow-inner-soft border border-slate-200/50"></div>
+                                    <div class="w-6 h-6 bg-white dark:bg-slate-800 rounded-xl shadow-inner-soft border border-slate-200/50 dark:border-white/10"></div>
                                 </template>
                             </button>
                         </div>
 
                         <!-- Timeline Strip (Last 7 Days) -->
-                        <div class="bg-slate-50/50 rounded-3xl p-4 flex items-center justify-between border border-slate-100/50">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Last 7 Days</span>
+                        <div class="bg-slate-50/50 dark:bg-white/5 rounded-3xl p-4 flex items-center justify-between border border-slate-100/50 dark:border-white/5">
+                            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-2">Last 7 Days</span>
                             <div class="flex gap-2.5">
                                 <template x-for="day in getLastSevenDays()" :key="day.date">
                                     <div class="flex flex-col items-center gap-1.5">
                                         <div class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-500"
-                                             :class="getStatusForDate(h, day.date) === 'done' ? (h.color.replace('bg-', 'text-')) + ' bg-white shadow-sm' : 'bg-slate-100/80 text-slate-300'">
+                                             :class="getStatusForDate(h, day.date) === 'done' ? (h.color.replace('bg-', 'text-')) + ' bg-white dark:bg-slate-950 shadow-sm' : 'bg-slate-100/80 dark:bg-white/5 text-slate-300 dark:text-slate-700'">
                                             <i data-lucide="check-circle-2" size="14" x-show="getStatusForDate(h, day.date) === 'done'"></i>
-                                            <div x-show="getStatusForDate(h, day.date) !== 'done'" class="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                                            <div x-show="getStatusForDate(h, day.date) !== 'done'" class="w-1.5 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
                                         </div>
-                                        <span class="text-[8px] font-bold text-slate-400" x-text="day.label"></span>
+                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-600" x-text="day.label"></span>
                                     </div>
                                 </template>
                             </div>
@@ -172,8 +184,8 @@
         <template x-if="activeTab === 'all'">
             <div class="space-y-6">
                 <template x-for="h in habits" :key="h.id">
-                    <div class="bg-white rounded-[40px] p-8 border border-white shadow-premium relative group transition-all duration-500">
-                        <button @click="deleteHabit(h.id)" class="absolute top-8 right-8 text-slate-200 hover:text-rose-500 hover:scale-125 transition-all duration-300">
+                    <div class="bg-white dark:bg-[#1A1C1E] rounded-[40px] p-8 border border-white dark:border-white/5 shadow-premium dark:shadow-premium-dark relative group transition-all duration-500">
+                        <button @click="deleteHabit(h.id)" class="absolute top-8 right-8 text-slate-200 dark:text-slate-800 hover:text-rose-500 dark:hover:text-rose-500 hover:scale-125 transition-all duration-300">
                             <i data-lucide="trash-2" size="24"></i>
                         </button>
                         
@@ -182,29 +194,29 @@
                                 <i :data-lucide="h.icon" size="36"></i>
                             </div>
                             <div>
-                                <h3 class="text-3xl font-serif italic tracking-tight text-slate-900" x-text="h.name"></h3>
-                                <p class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1" x-text="'Started ' + formatCreated(h.createdAt)"></p>
+                                <h3 class="text-3xl font-serif tracking-tight text-slate-900 dark:text-white" x-text="h.name"></h3>
+                                <p class="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-1" x-text="'Started ' + formatCreated(h.createdAt)"></p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-6 mb-8">
-                            <div class="bg-slate-50/80 rounded-[32px] p-7 text-left border border-slate-100/50">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Days Active</p>
-                                <p class="text-4xl font-serif italic text-slate-900" x-text="getTotalCompleted(h)"></p>
+                            <div class="bg-slate-50/80 dark:bg-white/5 rounded-[32px] p-7 text-left border border-slate-100/50 dark:border-white/5">
+                                <p class="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest mb-1 leading-none">Days Active</p>
+                                <p class="text-4xl font-serif text-slate-900 dark:text-white" x-text="getTotalCompleted(h)"></p>
                             </div>
-                            <div class="bg-indigo-50/50 rounded-[32px] p-7 text-left border border-indigo-100/50">
-                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 leading-none">Current Streak</p>
-                                <p class="text-4xl font-serif italic text-indigo-600" x-text="getStreak(h)"></p>
+                            <div class="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-[32px] p-7 text-left border border-indigo-100/50 dark:border-indigo-500/10">
+                                <p class="text-[10px] font-black text-indigo-400 dark:text-indigo-400/60 uppercase tracking-widest mb-1 leading-none">Current Streak</p>
+                                <p class="text-4xl font-serif text-indigo-600 dark:text-indigo-400" x-text="getStreak(h)"></p>
                             </div>
                         </div>
 
                         <!-- Monthly Progress Grid (30 Days) -->
                         <div>
-                            <p class="text-[8px] font-bold text-slate-300 uppercase tracking-[0.3em] mb-4 ml-1">30-Day Momentum</p>
+                            <p class="text-[8px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-[0.3em] mb-4 ml-1">30-Day Momentum</p>
                             <div class="flex flex-wrap gap-1.5">
                                 <template x-for="day in getLastNDays(30)" :key="day.date">
-                                    <div class="w-3.5 h-3.5 rounded-[5px] border border-slate-50 transition-colors duration-1000" 
-                                         :class="getStatusForDate(h, day.date) === 'done' ? (h.color.replace('bg-', 'bg-opacity-80 bg-')) : 'bg-slate-50/50'"
+                                    <div class="w-3.5 h-3.5 rounded-[5px] border border-slate-50 dark:border-white/5 transition-colors duration-1000" 
+                                         :class="getStatusForDate(h, day.date) === 'done' ? (h.color.replace('bg-', 'bg-opacity-80 dark:bg-opacity-40 bg-')) : 'bg-slate-50/50 dark:bg-white/5'"
                                          :title="day.date">
                                     </div>
                                 </template>
@@ -219,7 +231,7 @@
         <template x-if="activeTab === 'stats'">
             <div class="space-y-8">
                 <!-- Card: Global Summary -->
-                <div class="bg-slate-900 rounded-[56px] p-12 text-white shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                <div class="bg-slate-950 dark:bg-slate-900 rounded-[56px] p-12 text-white border border-white/5 shadow-premium dark:shadow-premium-dark relative overflow-hidden">
                     <div class="absolute -top-20 -right-20 w-80 h-80 bg-indigo-500 blur-[120px] opacity-20"></div>
                     
                     <div class="relative z-10 text-center">
@@ -228,16 +240,16 @@
                             <span class="text-[10px] font-black uppercase tracking-[0.3em] text-white/80">Growth Metric</span>
                         </div>
                         
-                        <h2 class="text-6xl font-serif italic mb-10 leading-[1.1] tracking-tight">Elegance is <br>Consistency.</h2>
+                        <h2 class="text-5xl font-serif mb-10 leading-[1.1] tracking-tight text-white dark:text-slate-50">Elegance is <br>Consistency.</h2>
                         
-                        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-white/10 max-w-sm mx-auto">
+                        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-white/20 max-w-sm mx-auto">
                             <div>
-                                <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 leading-none">Total Days</p>
-                                <p class="text-4xl font-serif italic" x-text="totalAllCompletions"></p>
+                                <p class="text-[10px] font-bold text-white/60 dark:text-white/60 uppercase tracking-widest mb-2 leading-none">Total Days</p>
+                                <p class="text-4xl font-serif text-white whitespace-nowrap" x-text="totalAllCompletions"></p>
                             </div>
                             <div>
-                                <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 leading-none">Best Streak</p>
-                                <p class="text-4xl font-serif italic" x-text="bestStreak"></p>
+                                <p class="text-[10px] font-bold text-white/60 dark:text-white/60 uppercase tracking-widest mb-2 leading-none">Best Streak</p>
+                                <p class="text-4xl font-serif text-white whitespace-nowrap" x-text="bestStreak"></p>
                             </div>
                         </div>
                     </div>
@@ -245,19 +257,83 @@
 
                 <!-- Secondary Stats Grid -->
                 <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-white p-10 rounded-[48px] border border-slate-100 shadow-premium text-center">
-                        <div class="bg-amber-50 w-16 h-16 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-amber-500 shadow-sm">
+                    <div class="bg-white dark:bg-slate-900 p-10 rounded-[48px] border border-slate-200 dark:border-white/10 shadow-premium dark:shadow-premium-dark text-center">
+                        <div class="bg-amber-50 dark:bg-amber-900/20 w-16 h-16 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-amber-600 dark:text-amber-400 shadow-sm transition-colors">
                             <i data-lucide="zap" fill="currentColor" size="32"></i>
                         </div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Max Momentum</p>
-                        <p class="text-5xl font-[900] text-slate-900" x-text="bestStreak"></p>
+                        <p class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-2">Max Momentum</p>
+                        <p class="text-5xl font-black text-slate-950 dark:text-white" x-text="bestStreak"></p>
                     </div>
-                    <div class="bg-white p-10 rounded-[48px] border border-slate-100 shadow-premium text-center">
-                        <div class="bg-indigo-50 w-16 h-16 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-indigo-500 shadow-sm">
+                    <div class="bg-white dark:bg-slate-900 p-10 rounded-[48px] border border-slate-200 dark:border-white/10 shadow-premium dark:shadow-premium-dark text-center">
+                        <div class="bg-indigo-50 dark:bg-indigo-900/20 w-16 h-16 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-indigo-600 dark:text-indigo-400 shadow-sm transition-colors">
                             <i data-lucide="layers" size="32"></i>
                         </div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Daily Pillars</p>
-                        <p class="text-5xl font-[900] text-slate-900" x-text="habits.length"></p>
+                        <p class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-2">Daily Pillars</p>
+                        <p class="text-5xl font-black text-slate-950 dark:text-white" x-text="habits.length"></p>
+                    </div>
+                </div>
+
+                <!-- Monthly Status Card -->
+                <div class="bg-white dark:bg-slate-900 rounded-[56px] p-10 shadow-premium dark:shadow-premium-dark border border-slate-100 dark:border-white/5 transition-all duration-500">
+                    <div class="flex items-center justify-between mb-10">
+                        <div>
+                            <p class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em] mb-2">Monthly Executive</p>
+                            <h3 class="text-4xl font-serif text-slate-950 dark:text-white" x-text="getMonthlyStats().monthName"></h3>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-white/5 rounded-3xl p-4 text-right">
+                             <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Global Success</p>
+                             <p class="text-2xl font-serif text-slate-900 dark:text-white" x-text="Math.round((getMonthlyStats().done / (getMonthlyStats().done + getMonthlyStats().missed || 1)) * 100) + '%'"></p>
+                        </div>
+                    </div>
+
+                    <!-- Universal Heatmap -->
+                    <div class="mb-12">
+                        <p class="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.4em] mb-6 block ml-1">Total Daily Energy</p>
+                        <div class="grid grid-cols-7 gap-2.5">
+                            <template x-for="day in getCalendarStats()" :key="day.date">
+                                <div class="aspect-square rounded-xl border border-slate-50 dark:border-white/5 flex flex-col items-center justify-center relative group transition-all duration-300"
+                                     :class="[
+                                         day.isFuture ? 'opacity-20' : '',
+                                         day.completionRate >= 0.8 ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' : 
+                                         day.completionRate >= 0.5 ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' :
+                                         day.completionRate > 0 ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50 dark:bg-white/5 text-slate-300 dark:text-slate-700'
+                                     ]">
+                                    <span class="text-[8px] font-black mb-0.5" x-text="day.day"></span>
+                                    <template x-if="day.doneCount === habits.length && habits.length > 0 && !day.isFuture">
+                                        <i data-lucide="crown" size="8" stroke-width="4"></i>
+                                    </template>
+                                    
+                                    <!-- Tooltip -->
+                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-slate-900 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                                        <span x-text="day.doneCount + ' Done'"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Habit Breakdown -->
+                    <div class="space-y-6 pt-10 border-t border-slate-50 dark:border-white/5">
+                        <p class="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.4em] mb-6 block ml-1">Individual Progress</p>
+                        <template x-for="h in habits" :key="'stat-'+h.id">
+                            <div class="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 rounded-3xl border border-transparent hover:border-slate-100 dark:hover:border-white/10 transition-all">
+                                <div class="flex items-center gap-4">
+                                    <div :class="h.color" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-xs shadow-lg shadow-inherit/20">
+                                        <i :data-lucide="h.icon" size="16"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm" x-text="h.name"></p>
+                                        <p class="text-[10px] text-slate-400 font-medium" x-text="getHabitMonthlyPerformance(h).done + ' / ' + getMonthlyStats().totalDays + ' days done'"></p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-lg font-serif text-slate-900 dark:text-white" x-text="getHabitMonthlyPerformance(h).percentage + '%'"></p>
+                                    <div class="w-16 h-1 bg-slate-200 dark:bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                        <div :class="h.color" class="h-full rounded-full transition-all duration-1000" :style="'width: ' + getHabitMonthlyPerformance(h).percentage + '%'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -266,35 +342,35 @@
 
     <!-- Modal: Creation Flow -->
     <div x-show="isAddModalOpen" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 transition-all duration-500" x-transition:enter="duration-500 ease-out" x-transition:enter-start="opacity-0 translate-y-20" x-transition:leave="duration-300 ease-in" x-transition:leave-end="opacity-0 translate-y-20">
-        <div @click="isAddModalOpen = false" class="absolute inset-0 bg-slate-900/40 backdrop-blur-2xl"></div>
-        <div class="relative bg-white w-full max-w-md rounded-[56px] p-8 sm:p-12 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16"></div>
+        <div @click="isAddModalOpen = false" class="absolute inset-0 bg-slate-950/40 dark:bg-black/60 backdrop-blur-2xl"></div>
+        <div class="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[56px] p-8 sm:p-12 shadow-2xl dark:shadow-premium-dark overflow-y-auto max-h-[90vh] no-scrollbar">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-white/5 rounded-full -mr-16 -mt-16"></div>
             
-            <h2 class="text-5xl font-serif italic mb-12 tracking-tight relative leading-none">New Ritual</h2>
+            <h2 class="text-4xl font-serif mb-12 tracking-tight relative leading-none text-slate-950 dark:text-white">New Ritual</h2>
             
             <form @submit.prevent="addHabit()">
                 <div class="mb-10 space-y-4">
-                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] block ml-1">Ritual Name</label>
-                    <input x-model="newHabitName" placeholder="E.g. Morning Meditation" class="w-full bg-slate-50/80 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-[28px] px-8 py-6 outline-none transition-all font-bold text-xl placeholder:text-slate-200">
+                    <label class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-[0.3em] block ml-1">Ritual Name</label>
+                    <input x-model="newHabitName" placeholder="E.g. Morning Meditation" class="w-full bg-slate-50/80 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-950 rounded-[28px] px-8 py-6 outline-none transition-all font-bold text-xl placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-950 dark:text-white">
                 </div>
 
                 <div class="mb-10 space-y-6">
-                    <label class="text-[9px] font-black uppercase text-slate-400 tracking-[0.4em] block ml-1">Choose a Vibe</label>
+                    <label class="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-[0.4em] block ml-1">Choose a Vibe</label>
                     <div class="flex flex-wrap gap-4">
                         <template x-for="c in colors">
                             <button type="button" @click="selectedColor = c" 
-                                    :class="[c, selectedColor === c ? 'ring-2 ring-offset-4 ring-slate-900 opacity-100' : 'opacity-40 hover:opacity-100']"
-                                    class="w-8 h-8 rounded-full transition-all duration-300 shadow-sm cursor-pointer border border-white/20"></button>
+                                    :class="[c, selectedColor === c ? 'ring-2 ring-offset-4 ring-slate-950 dark:ring-white opacity-100' : 'opacity-40 hover:opacity-100']"
+                                    class="w-8 h-8 rounded-full transition-all duration-300 shadow-sm cursor-pointer border border-white/20 dark:border-black/20"></button>
                         </template>
                     </div>
                 </div>
 
                 <div class="mb-12 space-y-6">
-                    <label class="text-[9px] font-black uppercase text-slate-400 tracking-[0.4em] block ml-1">Iconic Symbol</label>
+                    <label class="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-[0.4em] block ml-1">Iconic Symbol</label>
                     <div class="grid grid-cols-5 gap-3">
                         <template x-for="iconName in iconsList">
                             <button type="button" @click="selectedIcon = iconName"
-                                    :class="selectedIcon === iconName ? 'bg-slate-900 text-white shadow-xl' : 'bg-slate-50 text-slate-200 hover:bg-slate-100'"
+                                    :class="selectedIcon === iconName ? 'bg-slate-950 dark:bg-white text-white dark:text-slate-950 shadow-xl' : 'bg-slate-50 dark:bg-white/5 text-slate-300 dark:text-slate-700 hover:bg-slate-100 dark:hover:bg-white/10'"
                                     class="w-full aspect-square rounded-[24px] flex items-center justify-center transition-all duration-300">
                                 <i :data-lucide="iconName" size="18" stroke-width="1.5"></i>
                             </button>
@@ -302,9 +378,10 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-slate-900 text-white py-7 rounded-[32px] font-black text-xl shadow-2xl hover:bg-black hover:translate-y-[-2px] transition-all duration-300">Begin Journey</button>
+                <button type="submit" class="w-full bg-slate-950 dark:bg-white text-white dark:text-slate-950 py-7 rounded-[32px] font-black text-xl shadow-2xl dark:shadow-premium-dark hover:translate-y-[-2px] transition-all duration-300">Begin Journey</button>
             </form>
         </div>
+    </div>
     </div>
 
     <script>
@@ -313,6 +390,7 @@
                 habits: [],
                 activeTab: 'today',
                 isAddModalOpen: false,
+                darkMode: false,
                 newHabitName: '',
                 selectedColor: 'bg-indigo-600',
                 selectedIcon: 'target',
@@ -333,6 +411,10 @@
                 init() {
                     const saved = localStorage.getItem('habitly_v2_premium');
                     if (saved) this.habits = JSON.parse(saved);
+                    
+                    const theme = localStorage.getItem('ritual_theme');
+                    this.darkMode = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    
                     this.refreshIcons();
                     
                     // AUTOMATIC DATE SYNC: Refresh the date every minute so the app resets at midnight automatically
@@ -358,6 +440,12 @@
 
                 save() {
                     localStorage.setItem('habitly_v2_premium', JSON.stringify(this.habits));
+                },
+
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('ritual_theme', this.darkMode ? 'dark' : 'light');
+                    this.refreshIcons();
                 },
 
                 addHabit() {
@@ -462,6 +550,77 @@
                 get todayProgressPercentage() {
                     if (this.habits.length === 0) return 0;
                     return Math.round((this.todayDoneCount / this.habits.length) * 100);
+                },
+
+                getMonthlyStats() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const todayDay = now.getDate();
+                    
+                    let doneTotal = 0;
+                    let possibleTotal = this.habits.length * todayDay;
+                    
+                    this.habits.forEach(h => {
+                        for (let i = 1; i <= todayDay; i++) {
+                            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                            if (h.history[dateStr] === 'done') {
+                                doneTotal++;
+                            }
+                        }
+                    });
+
+                    return {
+                        done: doneTotal,
+                        missed: possibleTotal - doneTotal,
+                        monthName: now.toLocaleString('default', { month: 'long' }),
+                        totalDays: todayDay
+                    };
+                },
+
+                getCalendarStats() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    let days = [];
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        let doneCount = 0;
+                        this.habits.forEach(h => {
+                            if (h.history[dateStr] === 'done') doneCount++;
+                        });
+                        
+                        days.push({
+                            day: i,
+                            date: dateStr,
+                            doneCount: doneCount,
+                            completionRate: this.habits.length > 0 ? (doneCount / this.habits.length) : 0,
+                            isFuture: new Date(dateStr) > new Date()
+                        });
+                    }
+                    return days;
+                },
+
+                getHabitMonthlyPerformance(h) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const todayDay = now.getDate();
+                    
+                    let done = 0;
+                    for (let i = 1; i <= todayDay; i++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        if (h.history[dateStr] === 'done') done++;
+                    }
+                    
+                    return {
+                        done,
+                        missed: todayDay - done,
+                        percentage: Math.round((done / todayDay) * 100)
+                    };
                 },
 
                 get successRate() {
