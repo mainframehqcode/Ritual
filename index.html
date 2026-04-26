@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ritual-The habit tracker</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Instrument Serif"', 'serif'],
+                    },
+                    boxShadow: {
+                        'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.05)',
+                        'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .mask-fade-right {
+            mask-image: linear-gradient(to right, black 80%, transparent 100%);
+        }
+    </style>
+</head>
+<body class="bg-[#F6F8FA] text-[#1A1C1E] font-sans selection:bg-indigo-100" x-data="habitApp()" x-init="init()" x-cloak>
+
+    <!-- Navigation Overlay -->
+    <div class="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F6F8FA] to-transparent pointer-events-none z-40"></div>
+    
+    <!-- Floating Bottom Menu -->
+    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-2xl border border-white/50 shadow-premium rounded-[40px] px-4 py-3 flex items-center justify-around w-[90%] max-w-sm z-50">
+        <button @click="activeTab = 'today'" :class="activeTab === 'today' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
+            <i data-lucide="layout-grid" class="group-hover:scale-110 transition-transform" :size="20" :stroke-width="activeTab === 'today' ? 2.5 : 2"></i>
+            <span x-show="activeTab === 'today'" class="text-xs font-bold tracking-tight" x-transition>Daily</span>
+        </button>
+        <button @click="activeTab = 'all'" :class="activeTab === 'all' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
+            <i data-lucide="list" class="group-hover:scale-110 transition-transform" :size="20" :stroke-width="activeTab === 'all' ? 2.5 : 2"></i>
+            <span x-show="activeTab === 'all'" class="text-xs font-bold tracking-tight" x-transition>Habits</span>
+        </button>
+        <button @click="activeTab = 'stats'" :class="activeTab === 'stats' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'" class="flex items-center gap-2 px-6 py-3 rounded-[28px] transition-all duration-300 group">
+            <i data-lucide="bar-chart-2" class="group-hover:scale-110 transition-transform" :size="20" :stroke-width="activeTab === 'stats' ? 2.5 : 2"></i>
+            <span x-show="activeTab === 'stats'" class="text-xs font-bold tracking-tight" x-transition>Growth</span>
+        </button>
+    </nav>
+
+    <!-- Header Section -->
+    <header class="max-w-xl mx-auto px-6 pt-20 pb-12">
+        <div class="flex justify-between items-start">
+            <div class="space-y-1">
+                <h1 class="text-7xl font-[400] font-serif tracking-tight text-slate-900 leading-none italic select-none">Ritual</h1>
+                <p class="text-slate-400 font-medium text-[9px] uppercase tracking-[0.4em] pl-1.5" x-text="todayFriendly"></p>
+            </div>
+            <button @click="isAddModalOpen = true" class="w-16 h-16 bg-slate-900 text-white rounded-[32px] flex items-center justify-center shadow-premium hover:bg-black active:scale-95 transition-all">
+                <i data-lucide="plus" stroke-width="1.5" size="24"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content -->
+    <main class="max-w-xl mx-auto px-6 pb-48">
+        
+        <!-- Tab: Today's Focus -->
+        <template x-if="activeTab === 'today'">
+            <div class="space-y-8">
+                <!-- Daily Progress Overview -->
+                <template x-if="habits.length > 0">
+                    <div class="bg-white rounded-[48px] p-10 shadow-premium border border-slate-50 relative overflow-hidden">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-end mb-6">
+                                <div>
+                                    <p class="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em] mb-2">Daily Progress</p>
+                                    <h4 class="text-3xl font-serif italic text-slate-900 leading-none">
+                                        <span x-text="todayDoneCount"></span>
+                                        <span class="text-sm font-sans not-italic text-slate-200 uppercase tracking-widest font-black ml-1">/ <span x-text="habits.length"></span></span>
+                                    </h4>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-4xl font-serif italic text-slate-900 opacity-20" x-text="todayProgressPercentage + '%'"></p>
+                                </div>
+                            </div>
+                            <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                                <div class="h-full bg-slate-900 rounded-full transition-all duration-1000 ease-out" :style="'width: ' + todayProgressPercentage + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Empty State -->
+                <template x-if="habits.length === 0">
+                    <div class="bg-white rounded-[56px] p-20 text-center border border-slate-100 shadow-premium">
+                        <div class="bg-slate-50 w-24 h-24 rounded-[40px] flex items-center justify-center mx-auto mb-10 text-slate-300">
+                            <i data-lucide="feather" size="40" stroke-width="1"></i>
+                        </div>
+                        <h3 class="text-4xl font-serif italic mb-4 tracking-tight">Tabula Rasa</h3>
+                        <p class="text-slate-400 font-medium mb-12 text-lg leading-relaxed px-6">Every great change begins with a single intentional act.</p>
+                        <button @click="isAddModalOpen = true" class="bg-slate-900 text-white px-12 py-6 rounded-[32px] font-bold shadow-xl">Define Ritual</button>
+                    </div>
+                </template>
+                
+                <!-- Habit Cards -->
+                <template x-for="h in habits" :key="h.id">
+                    <div class="bg-white rounded-[48px] p-8 shadow-premium border border-slate-50 transition-all duration-300">
+                        <div class="flex items-center justify-between mb-10">
+                            <div class="flex items-center gap-7">
+                                <div :class="h.color" class="w-16 h-16 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-inherit/10 relative">
+                                    <i :data-lucide="h.icon" size="24" stroke-width="2"></i>
+                                    <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-white rounded-full flex items-center justify-center border border-slate-50 shadow-sm" x-show="isDoneToday(h)">
+                                         <i data-lucide="check" size="12" stroke-width="3" class="text-emerald-500"></i>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <h3 class="font-bold text-2xl tracking-tight text-slate-800" :class="isDoneToday(h) && 'text-slate-200'" x-text="h.name"></h3>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-slate-400 text-[9px] font-bold uppercase tracking-[0.25em] flex items-center gap-2 leading-none">
+                                            <span class="w-1 h-1 rounded-full bg-orange-400"></span>
+                                            <span x-text="getStreak(h)"></span> Day streak
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Completion Toggle -->
+                            <button @click="toggleToday(h.id)" 
+                                    :class="isDoneToday(h) ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-slate-50 text-slate-100 border-slate-100'"
+                                    class="w-16 h-16 rounded-[32px] flex items-center justify-center transition-colors duration-300 shadow-sm border">
+                                <template x-if="isDoneToday(h)">
+                                    <i data-lucide="check" stroke-width="2.5" size="28"></i>
+                                </template>
+                                <template x-if="!isDoneToday(h)">
+                                    <div class="w-6 h-6 bg-white rounded-xl shadow-inner-soft border border-slate-200/50"></div>
+                                </template>
+                            </button>
+                        </div>
+
+                        <!-- Timeline Strip (Last 7 Days) -->
+                        <div class="bg-slate-50/50 rounded-3xl p-4 flex items-center justify-between border border-slate-100/50">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Last 7 Days</span>
+                            <div class="flex gap-2.5">
+                                <template x-for="day in getLastSevenDays()" :key="day.date">
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        <div class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-500"
+                                             :class="getStatusForDate(h, day.date) === 'done' ? (h.color.replace('bg-', 'text-')) + ' bg-white shadow-sm' : 'bg-slate-100/80 text-slate-300'">
+                                            <i data-lucide="check-circle-2" size="14" x-show="getStatusForDate(h, day.date) === 'done'"></i>
+                                            <div x-show="getStatusForDate(h, day.date) !== 'done'" class="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                                        </div>
+                                        <span class="text-[8px] font-bold text-slate-400" x-text="day.label"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Tab: Habits Management -->
+        <template x-if="activeTab === 'all'">
+            <div class="space-y-6">
+                <template x-for="h in habits" :key="h.id">
+                    <div class="bg-white rounded-[40px] p-8 border border-white shadow-premium relative group transition-all duration-500">
+                        <button @click="deleteHabit(h.id)" class="absolute top-8 right-8 text-slate-200 hover:text-rose-500 hover:scale-125 transition-all duration-300">
+                            <i data-lucide="trash-2" size="24"></i>
+                        </button>
+                        
+                        <div class="flex items-center gap-6 mb-10">
+                            <div :class="h.color" class="w-20 h-20 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-inherit/20">
+                                <i :data-lucide="h.icon" size="36"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-3xl font-serif italic tracking-tight text-slate-900" x-text="h.name"></h3>
+                                <p class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1" x-text="'Started ' + formatCreated(h.createdAt)"></p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6 mb-8">
+                            <div class="bg-slate-50/80 rounded-[32px] p-7 text-left border border-slate-100/50">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Days Active</p>
+                                <p class="text-4xl font-serif italic text-slate-900" x-text="getTotalCompleted(h)"></p>
+                            </div>
+                            <div class="bg-indigo-50/50 rounded-[32px] p-7 text-left border border-indigo-100/50">
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 leading-none">Current Streak</p>
+                                <p class="text-4xl font-serif italic text-indigo-600" x-text="getStreak(h)"></p>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Progress Grid (30 Days) -->
+                        <div>
+                            <p class="text-[8px] font-bold text-slate-300 uppercase tracking-[0.3em] mb-4 ml-1">30-Day Momentum</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                <template x-for="day in getLastNDays(30)" :key="day.date">
+                                    <div class="w-3.5 h-3.5 rounded-[5px] border border-slate-50 transition-colors duration-1000" 
+                                         :class="getStatusForDate(h, day.date) === 'done' ? (h.color.replace('bg-', 'bg-opacity-80 bg-')) : 'bg-slate-50/50'"
+                                         :title="day.date">
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Tab: Growth & Performance -->
+        <template x-if="activeTab === 'stats'">
+            <div class="space-y-8">
+                <!-- Card: Global Summary -->
+                <div class="bg-slate-900 rounded-[56px] p-12 text-white shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                    <div class="absolute -top-20 -right-20 w-80 h-80 bg-indigo-500 blur-[120px] opacity-20"></div>
+                    
+                    <div class="relative z-10 text-center">
+                        <div class="inline-flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full border border-white/10 mb-8">
+                            <i data-lucide="award" size="14" class="text-amber-400"></i>
+                            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-white/80">Growth Metric</span>
+                        </div>
+                        
+                        <h2 class="text-6xl font-serif italic mb-10 leading-[1.1] tracking-tight">Elegance is <br>Consistency.</h2>
+                        
+                        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-white/10 max-w-sm mx-auto">
+                            <div>
+                                <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 leading-none">Total Days</p>
+                                <p class="text-4xl font-serif italic" x-text="totalAllCompletions"></p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 leading-none">Best Streak</p>
+                                <p class="text-4xl font-serif italic" x-text="bestStreak"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Stats Grid -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-white p-10 rounded-[48px] border border-slate-100 shadow-premium text-center">
+                        <div class="bg-amber-50 w-16 h-16 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-amber-500 shadow-sm">
+                            <i data-lucide="zap" fill="currentColor" size="32"></i>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Max Momentum</p>
+                        <p class="text-5xl font-[900] text-slate-900" x-text="bestStreak"></p>
+                    </div>
+                    <div class="bg-white p-10 rounded-[48px] border border-slate-100 shadow-premium text-center">
+                        <div class="bg-indigo-50 w-16 h-16 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-indigo-500 shadow-sm">
+                            <i data-lucide="layers" size="32"></i>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Daily Pillars</p>
+                        <p class="text-5xl font-[900] text-slate-900" x-text="habits.length"></p>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </main>
+
+    <!-- Modal: Creation Flow -->
+    <div x-show="isAddModalOpen" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 transition-all duration-500" x-transition:enter="duration-500 ease-out" x-transition:enter-start="opacity-0 translate-y-20" x-transition:leave="duration-300 ease-in" x-transition:leave-end="opacity-0 translate-y-20">
+        <div @click="isAddModalOpen = false" class="absolute inset-0 bg-slate-900/40 backdrop-blur-2xl"></div>
+        <div class="relative bg-white w-full max-w-md rounded-[56px] p-8 sm:p-12 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16"></div>
+            
+            <h2 class="text-5xl font-serif italic mb-12 tracking-tight relative leading-none">New Ritual</h2>
+            
+            <form @submit.prevent="addHabit()">
+                <div class="mb-10 space-y-4">
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] block ml-1">Ritual Name</label>
+                    <input x-model="newHabitName" placeholder="E.g. Morning Meditation" class="w-full bg-slate-50/80 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-[28px] px-8 py-6 outline-none transition-all font-bold text-xl placeholder:text-slate-200">
+                </div>
+
+                <div class="mb-10 space-y-6">
+                    <label class="text-[9px] font-black uppercase text-slate-400 tracking-[0.4em] block ml-1">Choose a Vibe</label>
+                    <div class="flex flex-wrap gap-4">
+                        <template x-for="c in colors">
+                            <button type="button" @click="selectedColor = c" 
+                                    :class="[c, selectedColor === c ? 'ring-2 ring-offset-4 ring-slate-900 opacity-100' : 'opacity-40 hover:opacity-100']"
+                                    class="w-8 h-8 rounded-full transition-all duration-300 shadow-sm cursor-pointer border border-white/20"></button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="mb-12 space-y-6">
+                    <label class="text-[9px] font-black uppercase text-slate-400 tracking-[0.4em] block ml-1">Iconic Symbol</label>
+                    <div class="grid grid-cols-5 gap-3">
+                        <template x-for="iconName in iconsList">
+                            <button type="button" @click="selectedIcon = iconName"
+                                    :class="selectedIcon === iconName ? 'bg-slate-900 text-white shadow-xl' : 'bg-slate-50 text-slate-200 hover:bg-slate-100'"
+                                    class="w-full aspect-square rounded-[24px] flex items-center justify-center transition-all duration-300">
+                                <i :data-lucide="iconName" size="18" stroke-width="1.5"></i>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 text-white py-7 rounded-[32px] font-black text-xl shadow-2xl hover:bg-black hover:translate-y-[-2px] transition-all duration-300">Begin Journey</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function habitApp() {
+            return {
+                habits: [],
+                activeTab: 'today',
+                isAddModalOpen: false,
+                newHabitName: '',
+                selectedColor: 'bg-indigo-600',
+                selectedIcon: 'target',
+                todayStr: new Date().toISOString().split('T')[0],
+                todayFriendly: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                colors: [
+                    'bg-indigo-600', 
+                    'bg-rose-500', 
+                    'bg-emerald-500', 
+                    'bg-amber-400', 
+                    'bg-violet-600', 
+                    'bg-cyan-500',
+                    'bg-orange-500',
+                    'bg-slate-900'
+                ],
+                iconsList: ['target', 'zap', 'activity', 'award', 'sun', 'moon', 'coffee', 'dumbbell', 'book', 'heart', 'droplet', 'leaf', 'camera', 'music', 'bicycle', 'flame', 'smile', 'star', 'code', 'pen-tool'],
+                
+                init() {
+                    const saved = localStorage.getItem('habitly_v2_premium');
+                    if (saved) this.habits = JSON.parse(saved);
+                    this.refreshIcons();
+                    
+                    // AUTOMATIC DATE SYNC: Refresh the date every minute so the app resets at midnight automatically
+                    setInterval(() => {
+                        const now = new Date().toISOString().split('T')[0];
+                        if (this.todayStr !== now) {
+                            this.todayStr = now;
+                            this.todayFriendly = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                        }
+                    }, 60000);
+                    
+                    // Reactive refreshes
+                    this.$watch('activeTab', () => this.refreshIcons());
+                    this.$watch('isAddModalOpen', () => this.refreshIcons());
+                    this.$watch('habits', () => this.refreshIcons());
+                },
+
+                refreshIcons() {
+                    this.$nextTick(() => {
+                        if (window.lucide) lucide.createIcons();
+                    });
+                },
+
+                save() {
+                    localStorage.setItem('habitly_v2_premium', JSON.stringify(this.habits));
+                },
+
+                addHabit() {
+                    if (!this.newHabitName.trim()) return;
+                    const h = {
+                        id: 'h-' + Date.now(),
+                        name: this.newHabitName,
+                        color: this.selectedColor,
+                        icon: this.selectedIcon,
+                        createdAt: Date.now(),
+                        history: {}
+                    };
+                    this.habits.unshift(h);
+                    this.save();
+                    this.newHabitName = '';
+                    this.isAddModalOpen = false;
+                },
+
+                deleteHabit(id) {
+                    if (confirm('Permanently remove this habit and all history?')) {
+                        this.habits = this.habits.filter(h => h.id !== id);
+                        this.save();
+                    }
+                },
+
+                toggleToday(id) {
+                    const h = this.habits.find(x => x.id === id);
+                    if (h) {
+                        h.history[this.todayStr] = h.history[this.todayStr] === 'done' ? 'none' : 'done';
+                        this.save();
+                    }
+                },
+
+                isDoneToday(habit) {
+                    return habit.history[this.todayStr] === 'done';
+                },
+
+                getStatusForDate(habit, dateStr) {
+                    return habit.history[dateStr] || 'none';
+                },
+
+                getLastSevenDays() {
+                    return this.getLastNDays(7);
+                },
+
+                getLastNDays(n) {
+                    const days = [];
+                    const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    for (let i = n - 1; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        days.push({
+                            date: d.toISOString().split('T')[0],
+                            label: labels[d.getDay()],
+                            labelFormatted: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        });
+                    }
+                    return days;
+                },
+
+                getStreak(habit) {
+                    let streak = 0;
+                    let checkDate = new Date();
+                    while (true) {
+                        const dStr = checkDate.toISOString().split('T')[0];
+                        if (habit.history[dStr] === 'done') {
+                            streak++;
+                            checkDate.setDate(checkDate.getDate() - 1);
+                        } else {
+                            // If today is empty, streak continues if yesterday was done
+                            if (streak === 0 && dStr === this.todayStr) {
+                                checkDate.setDate(checkDate.getDate() - 1);
+                                continue;
+                            }
+                            break;
+                        }
+                    }
+                    return streak;
+                },
+
+                getTotalCompleted(habit) {
+                    return Object.values(habit.history).filter(v => v === 'done').length;
+                },
+
+                formatCreated(timestamp) {
+                    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                },
+
+                get bestStreak() {
+                    if (this.habits.length === 0) return 0;
+                    return Math.max(...this.habits.map(h => this.getStreak(h)));
+                },
+
+                get totalAllCompletions() {
+                    return this.habits.reduce((acc, h) => acc + this.getTotalCompleted(h), 0);
+                },
+
+                get todayDoneCount() {
+                    return this.habits.filter(h => this.isDoneToday(h)).length;
+                },
+
+                get todayProgressPercentage() {
+                    if (this.habits.length === 0) return 0;
+                    return Math.round((this.todayDoneCount / this.habits.length) * 100);
+                },
+
+                get successRate() {
+                    if (this.habits.length === 0) return 0;
+                    // Mock calculation for demo purposes: completions vs total habits existence days
+                    const totalPossible = this.habits.reduce((acc, h) => {
+                        const diff = Math.ceil((Date.now() - h.createdAt) / (1000 * 60 * 60 * 24));
+                        return acc + Math.max(1, diff);
+                    }, 0);
+                    return Math.round((this.totalAllCompletions / totalPossible) * 100);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
