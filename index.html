@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritual</title>
-    <link rel="icon" type="image/svg+xml" href="ritual.png">
-    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/shapes/svg?seed=Ritual&backgroundColor=0f172a">
+    <link rel="icon" type="image/png" href="ritual.png">
+    <link rel="apple-touch-icon" href="ritual.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -385,6 +389,16 @@
     </div>
 
     <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+
         function habitApp() {
             return {
                 habits: [],
